@@ -1,0 +1,45 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: data-ingestion-service
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+exchange:
+  symbols:
+    - BTCUSD
+    - ETHUSD
+    - XRPUSD
+    - SOLUSD
+    - ADAUSD
+  enabled-exchanges:
+    - BINANCE
+    - COINBASE
+    - KRAKEN
+    - YAHOO
+  default-exchange: BINANCE
+  reconnect-delay-seconds: 5
+  max-reconnect-attempts: 10
+  simulation-mode: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,metrics,info
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+logging:
+  level:
+    root: INFO
+    com.fintech: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

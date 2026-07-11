@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fintech-config
+  namespace: fintech
+data:
+  kafka-bootstrap-servers: "kafka:9092"
+  kafka-num-partitions: "32"
+  kafka-replication-factor: "2"
+  postgres-host: "postgres"
+  postgres-port: "5432"
+  postgres-db: "financial_data"
+  postgres-pool-size: "20"
+  redis-host: "redis"
+  redis-port: "6379"
+  redis-ttl-seconds: "604800"
+  model-storage-path: "/models"
+  model-retraining-interval-hours: "24"
+  drift-detection-threshold: "0.1"
+  prometheus-port: "9090"
+  grafana-admin-password: "admin"
+  api-port: "8080"
+  api-threads: "50"
+  prediction-timeout-ms: "100"
