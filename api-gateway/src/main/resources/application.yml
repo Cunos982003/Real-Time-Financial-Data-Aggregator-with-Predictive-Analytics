@@ -1,0 +1,58 @@
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  cloud:
+    gateway:
+      routes:
+        - id: ml-inference
+          uri: http://ml-inference:8083
+          predicates:
+            - Path=/api/v1/predictions/**
+        - id: ml-inference-backtest
+          uri: http://ml-inference:8083
+          predicates:
+            - Path=/api/v1/backtest/**
+        - id: ml-inference-models
+          uri: http://ml-inference:8083
+          predicates:
+            - Path=/api/v1/models/**
+        - id: feature-store
+          uri: http://feature-store:8084
+          predicates:
+            - Path=/api/v1/features/**
+        - id: ingestion
+          uri: http://data-ingestion:8081
+          predicates:
+            - Path=/ingestion/**
+          filters:
+            - StripPrefix=1
+        - id: stream-processing
+          uri: http://stream-processing:8082
+          predicates:
+            - Path=/stream/**
+          filters:
+            - StripPrefix=1
+        - id: feature-store-internal
+          uri: http://feature-store:8084
+          predicates:
+            - Path=/feature-store/**
+          filters:
+            - StripPrefix=1
+        - id: ml-inference-internal
+          uri: http://ml-inference:8083
+          predicates:
+            - Path=/ml/**
+          filters:
+            - StripPrefix=1
+        - id: monitoring-internal
+          uri: http://monitoring:8085
+          predicates:
+            - Path=/monitoring/**
+          filters:
+            - StripPrefix=1
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"

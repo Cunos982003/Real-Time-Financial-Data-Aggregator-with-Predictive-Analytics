@@ -1,0 +1,40 @@
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+*.log
+shelf/
+workspace.xml
+/httpRequests/
+/queries/
+/dataSources/
+/dataSources.local.xml
+
+# Build output
+target/
+build/
+*.class
+*.jar
+*.war
+
+# Maven
+.m2/
+.mvn/wrapper/maven-wrapper.jar
+
+# Docker
+.docker/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+*.pem
+*.key
+credentials.json
