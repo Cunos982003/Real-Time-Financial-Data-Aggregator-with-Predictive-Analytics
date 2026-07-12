@@ -54,15 +54,17 @@ services:
     environment:
       POSTGRES_DB: financial_data
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: 123456
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./scripts/init-postgres.sh:/docker-entrypoint-initdb.d/init.sh
+      - ./scripts/init-postgres.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - fintech
 
   redis:
     image: redis:7-alpine
@@ -76,6 +78,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - fintech
 
   prometheus:
     image: prom/prometheus:v2.47.0
@@ -109,7 +113,7 @@ services:
       context: .
       dockerfile: data-ingestion-service/Dockerfile
     ports:
-      - "8081:8081"
+      - "9091:8080"
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
@@ -145,7 +149,7 @@ services:
       POSTGRES_PORT: 5432
       POSTGRES_DB: financial_data
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: 123456
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: redis_password
@@ -169,7 +173,7 @@ services:
       POSTGRES_PORT: 5432
       POSTGRES_DB: financial_data
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: 123456
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: redis_password

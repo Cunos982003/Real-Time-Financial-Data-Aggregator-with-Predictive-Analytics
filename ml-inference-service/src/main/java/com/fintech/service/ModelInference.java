@@ -75,7 +75,8 @@ public class ModelInference {
                 .confidence(confidence.setScale(4, RoundingMode.HALF_UP))
                 .probabilityUp(BigDecimal.valueOf(probs[0]).setScale(4, RoundingMode.HALF_UP))
                 .probabilityDown(BigDecimal.valueOf(probs[1]).setScale(4, RoundingMode.HALF_UP))
-                .modelVersion(modelTrainer.getModelMetadata(symbol).getModelVersion())
+                .modelVersion(modelTrainer.getModelMetadata(symbol) != null
+                            ? modelTrainer.getModelMetadata(symbol).getModelVersion() : "init")
                 .latestPrice(latest.getPrice())
                 .timestamp(Instant.now())
                 .inferenceMs(System.currentTimeMillis() - start)
