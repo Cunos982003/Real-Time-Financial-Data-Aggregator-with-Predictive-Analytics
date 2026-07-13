@@ -9,7 +9,7 @@ on:
 env:
   JAVA_VERSION: '17'
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: ${{ github.actor }}/fintech
+  IMAGE_PREFIX: cunos982003/fintech
 
 jobs:
   compile:
