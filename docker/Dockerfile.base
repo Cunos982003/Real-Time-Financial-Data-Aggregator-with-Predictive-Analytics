@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17-jdk-alpine AS build
+FROM eclipse-temurin:17-jdk AS build
 WORKDIR /app
 COPY pom.xml .
 COPY data-ingestion-service/pom.xml data-ingestion-service/
@@ -7,14 +7,14 @@ COPY feature-store-service/pom.xml feature-store-service/
 COPY ml-inference-service/pom.xml ml-inference-service/
 COPY api-gateway/pom.xml api-gateway/
 COPY monitoring-service/pom.xml monitoring-service/
-RUN apk add --no-cache maven && mvn dependency:go-offline -B
+RUN apt-get update && apt-get install -y maven && rm -rf /var/lib/apt/lists/*
 
 COPY . .
 RUN mvn clean package -DskipTests -T 1C
 
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre
 WORKDIR /app
-RUN addgroup -S fintech && adduser -S fintech -G fintech
+RUN groupadd --system fintech && useradd --system --gid fintech fintech
 COPY --from=build /app/*/target/*.jar /app/libs/
 RUN mkdir -p /app/logs && chown -R fintech:fintech /app
 

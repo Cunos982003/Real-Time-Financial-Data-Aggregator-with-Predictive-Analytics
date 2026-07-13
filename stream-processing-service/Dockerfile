@@ -1,6 +1,6 @@
 # Stage 1: Build JAR with Maven
-FROM eclipse-temurin:17-jdk-alpine AS builder
-RUN apk add --no-cache maven
+FROM eclipse-temurin:17-jdk AS builder
+RUN apt-get update && apt-get install -y maven && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY pom.xml .
 COPY data-ingestion-service/pom.xml data-ingestion-service/pom.xml
@@ -18,9 +18,9 @@ COPY monitoring-service/src monitoring-service/src
 RUN mvn -f pom.xml clean package -DskipTests 2>&1 | tail -30
 
 # Stage 2: Runtime image
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre
 WORKDIR /app
-RUN addgroup -S fintech && adduser -S fintech -G fintech
+RUN groupadd --system fintech && useradd --system --gid fintech fintech
 COPY --from=builder /app/stream-processing-service/target/stream-processing-service-*.jar /app/stream-processing-service.jar
 RUN mkdir -p /app/logs && chown -R fintech:fintech /app
 USER fintech
