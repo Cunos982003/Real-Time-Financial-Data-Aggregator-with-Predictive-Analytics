@@ -26,13 +26,17 @@ public class DriftDetector {
     public DriftResult detect(String symbol, List<Double> currentValues) {
         double threshold = DEFAULT_THRESHOLD;
         List<Double> baseline = baselineDistributions.get(symbol);
-        double baselineMean = 50.0;
-        double baselineVar = 1.0;
+        double baselineMean;
+        double baselineVar;
         if (baseline != null && !baseline.isEmpty()) {
-            baselineMean = baseline.stream().mapToDouble(Double::doubleValue).average().orElse(baselineMean);
+            baselineMean = baseline.stream().mapToDouble(Double::doubleValue).average().orElse(50.0);
+            final double mean = baselineMean;
             baselineVar = baseline.stream()
-                    .mapToDouble(v -> Math.pow(v - baselineMean, 2))
-                    .average().orElse(baselineVar);
+                    .mapToDouble(v -> Math.pow(v - mean, 2))
+                    .average().orElse(50.0);
+        } else {
+            baselineMean = 50.0;
+            baselineVar = 1.0;
         }
 
         if (currentValues == null || currentValues.isEmpty()) {
