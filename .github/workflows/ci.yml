@@ -9,7 +9,7 @@ on:
 env:
   JAVA_VERSION: '17'
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: cunos982003/fintech
+  IMAGE_PREFIX: ${{ github.actor }}/fintech
 
 jobs:
   compile:
@@ -46,6 +46,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       packages: write
+      contents: read
     strategy:
       matrix:
         service:
