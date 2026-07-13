@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.netty.http.client.HttpClient;
+import reactor.util.retry.Retry;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -55,6 +56,7 @@ public class YahooFinanceConnector implements ExchangeConnector {
                 .map(raw -> parseQuote(raw, symbol))
                 .filter(msg -> msg != null)
                 .repeatWhen(counter -> counter.delayUntil(i -> Flux.interval(Duration.ofSeconds(30))))
+                .retryWhen(Retry.backoff(3, Duration.ofSeconds(3)).maxBackoff(Duration.ofSeconds(60)))
                 .doOnError(e -> log.error("Yahoo Finance polling error for {}: {}", symbol, e.getMessage()));
     }
 

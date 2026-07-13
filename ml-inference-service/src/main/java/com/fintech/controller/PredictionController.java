@@ -31,9 +31,10 @@ public class PredictionController {
     }
 
     @PostMapping("/models/{symbol}/train")
+    @SuppressWarnings("unchecked")
     public ResponseEntity<ModelMetadata> trainModel(
             @PathVariable String symbol, @RequestBody(required = false) TrainingRequest request) {
-        var req = request != null ? request : TrainingRequest.builder().symbol(symbol).build();
+        TrainingRequest req = (TrainingRequest) (request != null ? request : TrainingRequest.builder().symbol(symbol).build());
         List<double[]> features = List.of(new double[15]);
         List<Integer> labels = List.of(1, 0);
         TrainingData data = TrainingData.builder()

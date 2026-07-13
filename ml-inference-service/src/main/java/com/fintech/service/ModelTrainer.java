@@ -3,7 +3,6 @@ package com.fintech.service;
 import com.fintech.model.ModelMetadata;
 import com.fintech.model.TrainingData;
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +20,6 @@ import java.util.Random;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class ModelTrainer {
 
     private static final int INPUT_SIZE = 15;
@@ -33,8 +31,13 @@ public class ModelTrainer {
     private final Map<String, double[]> modelBias = new HashMap<>();
     private final Map<String, ModelMetadata> modelMetadata = new HashMap<>();
     private final Map<String, double[]> scalerParams = new HashMap<>();
+    private final DriftDetector driftDetector;
 
     private final Path modelStoragePath = Paths.get(System.getenv().getOrDefault("MODEL_STORAGE_PATH", "/models"));
+
+    public ModelTrainer(DriftDetector driftDetector) {
+        this.driftDetector = driftDetector;
+    }
 
     @PostConstruct
     public void init() {
@@ -45,8 +48,10 @@ public class ModelTrainer {
         }
         String[] symbols = {"BTCUSD", "ETHUSD", "XRPUSD"};
         for (String sym : symbols) {
-            modelWeights.put(sym, initializeWeights(INPUT_SIZE, HIDDEN_SIZE));
-            modelBias.put(sym, new double[HIDDEN_SIZE]);
+            double[] w = initializeWeights(INPUT_SIZE, HIDDEN_SIZE);
+            double[] b = new double[HIDDEN_SIZE];
+            modelWeights.put(sym, w);
+            modelBias.put(sym, b);
             scalerParams.put(sym, new double[INPUT_SIZE * 2]);
             modelMetadata.put(sym, ModelMetadata.builder()
                     .symbol(sym)
@@ -56,7 +61,16 @@ public class ModelTrainer {
                     .trainedAt(Instant.now())
                     .status("READY")
                     .build());
+
+            // Initialize drift baseline with synthetic reference values
+            driftDetector.setBaseline(sym + "_price",
+                    java.util.List.of(42000.0, 43000.0, 41000.0, 44000.0, 40000.0));
+            driftDetector.setBaseline(sym + "_rsi",
+                    java.util.List.of(50.0, 45.0, 55.0, 40.0, 60.0));
+            driftDetector.setBaseline(sym + "_macd",
+                    java.util.List.of(0.0, -10.0, 10.0, -5.0, 5.0));
         }
+        log.info("ModelTrainer initialized with baselines for drift detection");
     }
 
     public ModelMetadata train(String symbol, TrainingData data) {

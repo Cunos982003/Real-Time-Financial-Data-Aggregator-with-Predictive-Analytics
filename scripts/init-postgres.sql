@@ -31,6 +31,21 @@ CREATE TABLE IF NOT EXISTS features (
     PRIMARY KEY (id, timestamp)
 ) PARTITION BY RANGE (timestamp);
 
+-- Hourly aggregation materialized view
+CREATE MATERIALIZED VIEW IF NOT EXISTS hourly_features AS
+SELECT symbol,
+       date_trunc('hour', timestamp) as hour,
+       avg(rsi14) as avg_rsi,
+       avg(macd) as avg_macd,
+       avg(price) as avg_price,
+       avg(volume) as total_volume,
+       count(*) as tick_count
+FROM features
+WHERE timestamp > NOW() - INTERVAL '30 days'
+GROUP BY symbol, date_trunc('hour', timestamp);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_hourly_features ON hourly_features (symbol, hour);
+
 CREATE INDEX IF NOT EXISTS idx_features_symbol_timestamp ON features (symbol, timestamp DESC);
 
 -- Predictions table

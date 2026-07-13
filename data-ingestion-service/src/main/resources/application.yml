@@ -22,10 +22,14 @@ exchange:
     - COINBASE
     - KRAKEN
     - YAHOO
+    - IEXCLOUD
   default-exchange: BINANCE
   reconnect-delay-seconds: 5
   max-reconnect-attempts: 10
   simulation-mode: false
+  iexcloud:
+    api-key: ${IEXCLOUD_API_KEY:}
+    wss-url: ${IEXCLOUD_WSS_URL:wss://ws.iex.cloud/v1}
 
 management:
   endpoints:

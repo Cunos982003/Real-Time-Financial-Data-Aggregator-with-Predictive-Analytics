@@ -15,7 +15,7 @@ COPY feature-store-service/src feature-store-service/src
 COPY ml-inference-service/src ml-inference-service/src
 COPY api-gateway/src api-gateway/src
 COPY monitoring-service/src monitoring-service/src
-RUN mvn -f pom.xml clean package -DskipTests -q
+RUN mvn -f pom.xml clean package -DskipTests 2>&1 | tail -30
 
 # Stage 2: Runtime image
 FROM eclipse-temurin:17-jre-alpine

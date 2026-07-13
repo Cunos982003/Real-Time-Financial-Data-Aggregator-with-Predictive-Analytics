@@ -3,6 +3,7 @@ package com.fintech.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fintech.entity.FeatureEntity;
 import com.fintech.entity.PredictionEntity;
+import com.fintech.metrics.FeatureIngestionMetrics;
 import com.fintech.model.FeatureVector;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,11 +24,13 @@ public class FeatureStoreService {
     private final RedisFeatureStore redisStore;
     private final TimeSeriesFeatureStore tsStore;
     private final ObjectMapper objectMapper;
+    private final FeatureIngestionMetrics featureIngestionMetrics;
 
     @Transactional
     public void storeFeature(FeatureVector feature) {
         FeatureEntity entity = mapToEntity(feature);
         tsStore.saveFeature(entity);
+        featureIngestionMetrics.recordFeatureTimestamp(feature.getSymbol(), feature.getTimestamp());
 
         try {
             String json = objectMapper.writeValueAsString(feature);

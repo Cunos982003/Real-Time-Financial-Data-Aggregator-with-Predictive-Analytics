@@ -1,0 +1,50 @@
+groups:
+  - name: fintech_alerts
+    rules:
+    - alert: PredictionLatencyHigh
+      expr: histogram_quantile(0.95, rate(prediction_latency_seconds_bucket[5m])) > 0.5
+      for: 5m
+      labels:
+        severity: warning
+        service: ml-inference
+      annotations:
+        summary: "Prediction latency > 500ms for 5m"
+        description: "95th percentile prediction latency is {{ $value }}s for symbol {{ $labels.symbol }}"
+
+    - alert: ModelDriftDetected
+      expr: model_drift_score > 0.1
+      for: 5m
+      labels:
+        severity: critical
+        service: ml-inference
+      annotations:
+        summary: "Model drift score exceeds threshold"
+        description: "Model drift score {{ $value }} exceeds 0.1 for {{ $labels.symbol }}"
+
+    - alert: KafkaConsumerLagHigh
+      expr: kafka_consumer_lag > 1000
+      for: 5m
+      labels:
+        severity: warning
+        service: monitoring
+      annotations:
+        summary: "Kafka consumer lag > 1000"
+        description: "Consumer lag is {{ $value }} messages"
+
+    - alert: ServiceDown
+      expr: up == 0
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Service is down"
+        description: "{{ $labels.job }} has been down for more than 2 minutes"
+
+    - alert: HighPredictionErrorRate
+      expr: rate(prediction_requests_total[5m]) == 0 and rate(prediction_requests_total[10m]) > 0
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Prediction requests stopped"
+        description: "No prediction requests received for 5 minutes"
