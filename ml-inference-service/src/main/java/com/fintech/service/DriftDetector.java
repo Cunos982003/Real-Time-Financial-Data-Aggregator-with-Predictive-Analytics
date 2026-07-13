@@ -13,7 +13,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class DriftDetector {
 
-    private static final double DEFAULT_THRESHOLD = 0.1;
+    private static final double DEFAULT_THRESHOLD = 1.96;
+    private static final double KL_THRESHOLD = 0.5;
 
     private final Map<String, List<Double>> baselineDistributions = new ConcurrentHashMap<>();
     private final Map<String, DriftResult> lastResults = new ConcurrentHashMap<>();
@@ -24,40 +25,43 @@ public class DriftDetector {
     }
 
     public DriftResult detect(String symbol, List<Double> currentValues) {
-        double threshold = DEFAULT_THRESHOLD;
         List<Double> baseline = baselineDistributions.get(symbol);
-        double baselineMean;
-        double baselineVar;
-        if (baseline != null && !baseline.isEmpty()) {
-            baselineMean = baseline.stream().mapToDouble(Double::doubleValue).average().orElse(50.0);
-            final double mean = baselineMean;
-            baselineVar = baseline.stream()
-                    .mapToDouble(v -> Math.pow(v - mean, 2))
-                    .average().orElse(50.0);
-        } else {
-            baselineMean = 50.0;
-            baselineVar = 1.0;
-        }
 
         if (currentValues == null || currentValues.isEmpty()) {
-            return buildResult(symbol, 0, 0, false, threshold);
+            return buildResult(symbol, 0, 0, false, DEFAULT_THRESHOLD);
+        }
+
+        double baselineMean = 50.0;
+        double baselineVar = 1.0;
+        int baselineN = 1;
+        if (baseline != null && !baseline.isEmpty()) {
+            baselineMean = baseline.stream().mapToDouble(Double::doubleValue).average().orElse(baselineMean);
+            final double m = baselineMean;
+            baselineVar = baseline.stream().mapToDouble(v -> Math.pow(v - m, 2)).average().orElse(baselineVar);
+            baselineN = baseline.size();
         }
 
         double currentMean = currentValues.stream().mapToDouble(Double::doubleValue).average().orElse(0);
         double currentVar = currentValues.stream()
                 .mapToDouble(v -> Math.pow(v - currentMean, 2))
                 .average().orElse(1e-6);
+        int currentN = currentValues.size();
+
+        double stdErr = Math.sqrt((baselineVar / baselineN) + (currentVar / currentN));
+        double zScore = (stdErr > 1e-6 && baseline != null)
+                ? Math.abs(baselineMean - currentMean) / stdErr
+                : 0;
 
         double klDiv = computeKLDivergence(baselineMean, baselineVar, currentMean, currentVar);
         double psi = computePSI(baselineMean, baselineVar, currentMean, currentVar);
-        boolean drift = psi > threshold || klDiv > threshold * 10;
 
-        String status = drift ? "DRIFT_DETECTED" : "NORMAL";
-        if (drift) {
-            log.warn("Drift detected for {}: KL={}, PSI={}", symbol, klDiv, psi);
+        boolean drift = zScore > DEFAULT_THRESHOLD || (baseline == null && klDiv > KL_THRESHOLD);
+
+        if (drift && baseline != null) {
+            log.warn("Drift detected for {}: z={}, PSI={}, KL={}", symbol, zScore, psi, klDiv);
         }
 
-        DriftResult result = buildResult(symbol, klDiv, psi, drift, threshold);
+        DriftResult result = buildResult(symbol, klDiv, psi, drift, DEFAULT_THRESHOLD);
         lastResults.put(symbol, result);
         return result;
     }
