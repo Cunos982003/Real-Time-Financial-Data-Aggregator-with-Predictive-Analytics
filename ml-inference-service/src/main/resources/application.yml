@@ -20,8 +20,9 @@ spring:
     host: ${REDIS_HOST:localhost}
     port: ${REDIS_PORT:6379}
     password: ${REDIS_PASSWORD:}
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
 
 model:
   storage-path: ${MODEL_STORAGE_PATH:/models}
@@ -35,9 +36,6 @@ spring.cache:
 
 spring.kafka:
   bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-  producer:
-    key-serializer: org.apache.kafka.common.serialization.StringSerializer
-    value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 kafka:
   topics:

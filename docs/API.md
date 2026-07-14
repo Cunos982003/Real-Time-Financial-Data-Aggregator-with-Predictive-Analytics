@@ -198,47 +198,26 @@ GET /api/v1/features/BTCUSD?lookbackSeconds=3600 HTTP/1.1
 
 ---
 
-### WebSocket /ws/stream/{symbol}
+### SSE GET /ws/stream/{symbol}
 
-Real-time prediction streaming.
+Real-time prediction streaming via Server-Sent Events. No authentication required. Streams predictions by polling ml-inference every `intervalMs` (default: 5000ms).
 
 **Connection:**
-```
-ws://localhost:8080/ws/stream/BTCUSD
-```
-
-**Subscribe Message:**
-```json
-{
-  "action": "subscribe",
-  "symbols": ["BTCUSD", "ETHUSD"],
-  "events": ["prediction", "feature", "alert"]
-}
+```http
+GET http://localhost:8080/ws/stream/BTCUSD
+GET http://localhost:8080/ws/stream/BTCUSD?intervalMs=10000
 ```
 
-**Prediction Message:**
-```json
-{
-  "type": "prediction",
-  "data": {
-    "symbol": "BTCUSD",
-    "prediction": 1,
-    "confidence": 0.82,
-    "timestamp": "2024-01-15T10:35:23Z"
-  },
-  "timestamp": "2024-01-15T10:35:23Z"
-}
+**SSE Event Format:**
+```
+event: prediction
+data: {"symbol":"BTCUSD","prediction":1,"confidence":0.7823,"probabilityUp":0.7823,"probabilityDown":0.2177,"latestPrice":42150.50,"timestamp":"2024-01-15T10:35:23Z","inferenceMs":4,"modelVersion":"..."}
+id: BTCUSD
 ```
 
-**Alert Message:**
-```json
-{
-  "type": "alert",
-  "level": "WARNING",
-  "symbol": "BTCUSD",
-  "message": "Model drift detected - retraining triggered",
-  "timestamp": "2024-01-15T10:35:45Z"
-}
+**Curl test:**
+```bash
+curl -N http://localhost:8080/ws/stream/BTCUSD
 ```
 
 ---

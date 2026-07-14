@@ -15,6 +15,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -168,34 +169,56 @@ public class ModelInference {
     }
 
     private List<FeatureVector> fetchFeatures(String symbol) {
+        List<FeatureVector> features = tryFetchFromFeatureStore(symbol);
+        if (!features.isEmpty()) {
+            return features;
+        }
+        return buildSyntheticFeatures(symbol);
+    }
+
+    private List<FeatureVector> tryFetchFromFeatureStore(String symbol) {
         try {
-            FeatureVector fake = FeatureVector.builder()
-                    .symbol(symbol)
-                    .timestamp(Instant.now())
-                    .price(BigDecimal.valueOf(42150.0 + Math.random() * 100))
-                    .rsi14(BigDecimal.valueOf(30 + Math.random() * 40))
-                    .macd(BigDecimal.valueOf(-5 + Math.random() * 10))
-                    .macdSignal(BigDecimal.valueOf(-3 + Math.random() * 6))
-                    .macdHistogram(BigDecimal.valueOf(-1 + Math.random() * 2))
-                    .volatilityStd(BigDecimal.valueOf(Math.random() * 0.02))
-                    .bbWidth(BigDecimal.valueOf(Math.random() * 0.05))
-                    .volumeMaRatio(BigDecimal.valueOf(0.8 + Math.random() * 0.4))
-                    .priceMomentum(BigDecimal.valueOf(-0.01 + Math.random() * 0.02))
-                    .rateOfChange(BigDecimal.valueOf(Math.random() * 5))
-                    .atr14(BigDecimal.valueOf(Math.random() * 100))
-                    .bidAskSpread(BigDecimal.valueOf(0.0002 + Math.random() * 0.0003))
-                    .hourOfDay(Instant.now().atZone(java.time.ZoneOffset.UTC).getHour())
-                    .dayOfWeek(Instant.now().atZone(java.time.ZoneOffset.UTC).getDayOfWeek().getValue())
-                    .build();
-            List<FeatureVector> list = new ArrayList<>();
-            for (int i = 0; i < 60; i++) {
-                list.add(fake);
-            }
-            return list;
+            return webClientBuilder.build()
+                    .get()
+                    .uri("http://feature-store:8084/api/v1/features/{symbol}?lookbackSeconds=3600", symbol)
+                    .retrieve()
+                    .bodyToFlux(FeatureVector.class)
+                    .collectList()
+                    .timeout(Duration.ofSeconds(3))
+                    .onErrorReturn(List.of())
+                    .block();
         } catch (Exception e) {
-            log.warn("Feature fetch failed for {}, using defaults: {}", symbol, e.getMessage());
+            log.debug("Feature store unavailable for {}: {}", symbol, e.getMessage());
             return List.of();
         }
+    }
+
+    private List<FeatureVector> buildSyntheticFeatures(String symbol) {
+        java.util.Random rand = new java.util.Random(symbol.hashCode());
+        List<FeatureVector> list = new ArrayList<>();
+        Instant base = Instant.now().minusSeconds(3600);
+        for (int i = 0; i < 60; i++) {
+            FeatureVector fv = FeatureVector.builder()
+                    .symbol(symbol)
+                    .timestamp(base.plusSeconds(i * 60))
+                    .price(BigDecimal.valueOf(42150.0 + rand.nextDouble() * 100))
+                    .rsi14(BigDecimal.valueOf(30 + rand.nextDouble() * 40))
+                    .macd(BigDecimal.valueOf(-5 + rand.nextDouble() * 10))
+                    .macdSignal(BigDecimal.valueOf(-3 + rand.nextDouble() * 6))
+                    .macdHistogram(BigDecimal.valueOf(-1 + rand.nextDouble() * 2))
+                    .volatilityStd(BigDecimal.valueOf(rand.nextDouble() * 0.02))
+                    .bbWidth(BigDecimal.valueOf(rand.nextDouble() * 0.05))
+                    .volumeMaRatio(BigDecimal.valueOf(0.8 + rand.nextDouble() * 0.4))
+                    .priceMomentum(BigDecimal.valueOf(-0.01 + rand.nextDouble() * 0.02))
+                    .rateOfChange(BigDecimal.valueOf(rand.nextDouble() * 5))
+                    .atr14(BigDecimal.valueOf(rand.nextDouble() * 100))
+                    .bidAskSpread(BigDecimal.valueOf(0.0002 + rand.nextDouble() * 0.0003))
+                    .hourOfDay((int) ((base.plusSeconds(i * 60L)).atZone(java.time.ZoneOffset.UTC).getHour()))
+                    .dayOfWeek((int) ((base.plusSeconds(i * 60L)).atZone(java.time.ZoneOffset.UTC).getDayOfWeek().getValue()))
+                    .build();
+            list.add(fv);
+        }
+        return list;
     }
 
     private PredictionResult buildDefaultPrediction(String symbol) {

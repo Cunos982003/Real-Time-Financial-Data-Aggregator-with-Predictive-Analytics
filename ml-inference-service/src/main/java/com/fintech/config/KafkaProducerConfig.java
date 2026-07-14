@@ -1,3 +1,5 @@
+package com.fintech.config;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -29,7 +31,7 @@ public class KafkaProducerConfig {
     }
 
     @Bean
-    public ProducerFactory<String, Object> producerFactory(ObjectMapper kafkaObjectMapper) {
+    public ProducerFactory<String, Object> producerFactory() {
         Map<String, Object> config = new HashMap<>();
         config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
@@ -37,10 +39,7 @@ public class KafkaProducerConfig {
         config.put(ProducerConfig.ACKS_CONFIG, "all");
         config.put(ProducerConfig.RETRIES_CONFIG, 3);
         config.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
-        config.put(ProducerConfig.BATCH_SIZE_CONFIG, 16384);
-        config.put(ProducerConfig.LINGER_MS_CONFIG, 100);
-        config.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, 5);
-        JsonSerializer<Object> jsonSerializer = new JsonSerializer<>(kafkaObjectMapper);
+        JsonSerializer<Object> jsonSerializer = new JsonSerializer<>(kafkaObjectMapper());
         return new DefaultKafkaProducerFactory<>(config, new StringSerializer(), jsonSerializer);
     }
 
